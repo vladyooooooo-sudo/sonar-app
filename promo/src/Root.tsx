@@ -3,6 +3,7 @@ import { fade } from "@remotion/transitions/fade";
 import { slide } from "@remotion/transitions/slide";
 import { Composition, Folder } from "remotion";
 
+import { RANKED_DURATION, RankedAd } from "./ranked-ad";
 import { FeatureScene, HookScene, LogoScene, OfferScene, type FeatureProps, type Lang } from "./scenes";
 
 const T = 12;
@@ -66,6 +67,7 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="Offer" component={OfferScene} width={1080} height={1920} fps={30} durationInFrames={120} />
     </Folder>
     <Composition id="SonarPromo" component={SonarPromo} width={1080} height={1920} fps={30} durationInFrames={TOTAL} defaultProps={{ lang: "it" as Lang }} />
+    <Composition id="RankedAd" component={RankedAd} width={1080} height={1920} fps={30} durationInFrames={RANKED_DURATION} />
     <Composition id="SonarPromoEN" component={SonarPromo} width={1080} height={1920} fps={30} durationInFrames={TOTAL} defaultProps={{ lang: "en" as Lang }} />
   </>
 );
