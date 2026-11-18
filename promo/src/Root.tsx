@@ -3,26 +3,34 @@ import { fade } from "@remotion/transitions/fade";
 import { slide } from "@remotion/transitions/slide";
 import { Composition, Folder } from "remotion";
 
-import { FeatureScene, HookScene, LogoScene, OfferScene, type FeatureProps } from "./scenes";
+import { FeatureScene, HookScene, LogoScene, OfferScene, type FeatureProps, type Lang } from "./scenes";
 
 const T = 12;
 
-const features: FeatureProps[] = [
+const FEATURES: Record<Lang, FeatureProps[]> = {
+  it: [
   { kicker: "PORTAFOGLIO DEMO", title: "Prezzi reali,", highlight: "zero rischio.", shot: "shots/home.png", chip: "LIVE" },
   { kicker: "IL RADAR", title: "Scansiona i mercati", highlight: "al posto tuo.", shot: "shots/radar.png", chip: "Segnale 89" , chipColor: "#3D7BFF" },
   { kicker: "IMPARA", title: "Impara giocando.", highlight: "Sfida gli amici.", shot: "shots/impara.png", chip: "+50 XP", chipColor: "#7A5CFF" },
-];
+  ],
+  en: [
+    { kicker: "DEMO PORTFOLIO", title: "Real prices,", highlight: "zero risk.", shot: "shots/home.png", chip: "LIVE" },
+    { kicker: "THE RADAR", title: "Scans the markets", highlight: "for you.", shot: "shots/radar.png", chip: "Signal 89", chipColor: "#3D7BFF" },
+    { kicker: "LEARN", title: "Learn by playing.", highlight: "Challenge friends.", shot: "shots/impara.png", chip: "+50 XP", chipColor: "#7A5CFF" },
+  ],
+};
+const features = FEATURES.it;
 
-export const SonarPromo: React.FC = () => (
+export const SonarPromo: React.FC<{ lang?: Lang }> = ({ lang = "it" }) => (
   <TransitionSeries>
     <TransitionSeries.Sequence name="Hook" durationInFrames={95}>
-      <HookScene />
+      <HookScene lang={lang} />
     </TransitionSeries.Sequence>
     <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: T })} />
     <TransitionSeries.Sequence name="Logo" durationInFrames={80}>
-      <LogoScene />
+      <LogoScene lang={lang} />
     </TransitionSeries.Sequence>
-    {features.map((p, i) => [
+    {FEATURES[lang].map((p, i) => [
       <TransitionSeries.Transition
         key={`t${i}`}
         presentation={slide({ direction: "from-right" })}
@@ -34,7 +42,7 @@ export const SonarPromo: React.FC = () => (
     ])}
     <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: T })} />
     <TransitionSeries.Sequence name="Offer" durationInFrames={120}>
-      <OfferScene />
+      <OfferScene lang={lang} />
     </TransitionSeries.Sequence>
   </TransitionSeries>
 );
@@ -57,7 +65,8 @@ export const RemotionRoot: React.FC = () => (
       />
       <Composition id="Offer" component={OfferScene} width={1080} height={1920} fps={30} durationInFrames={120} />
     </Folder>
-    <Composition id="SonarPromo" component={SonarPromo} width={1080} height={1920} fps={30} durationInFrames={TOTAL} />
+    <Composition id="SonarPromo" component={SonarPromo} width={1080} height={1920} fps={30} durationInFrames={TOTAL} defaultProps={{ lang: "it" as Lang }} />
+    <Composition id="SonarPromoEN" component={SonarPromo} width={1080} height={1920} fps={30} durationInFrames={TOTAL} defaultProps={{ lang: "en" as Lang }} />
   </>
 );
 

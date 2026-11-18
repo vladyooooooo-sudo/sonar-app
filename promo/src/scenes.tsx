@@ -2,14 +2,43 @@ import { AbsoluteFill, Img, interpolate, spring, staticFile, useCurrentFrame, us
 
 import { Backdrop, C, FONT_BODY, FONT_DISPLAY, GemText, SonarMark, gemGradient } from "./brand";
 
+export type Lang = "it" | "en";
+export type LangProps = { lang?: Lang };
+
+const TEXT = {
+  it: {
+    hook: ["La maggior parte", "dei principianti", "perde soldi."],
+    what: "E se potessi",
+    train: "allenarti prima?",
+    tagline: "Mercati veri. Soldi finti.",
+    gift: "REGALO DI BENVENUTO",
+    trial: "+ 5 giorni gratis",
+    cta: "Scarica SONAR",
+    legal: "Simulazione educativa con valuta virtuale. Non è un consiglio di investimento.",
+    sep: ".",
+  },
+  en: {
+    hook: ["Most beginners", "lose money", "trading."],
+    what: "What if you could",
+    train: "practice first?",
+    tagline: "Real markets. Fake money.",
+    gift: "WELCOME GIFT",
+    trial: "+ 5 days free",
+    cta: "Get SONAR",
+    legal: "Educational simulation with virtual currency. Not investment advice.",
+    sep: ",",
+  },
+};
+
 const pop = (frame: number, fps: number, delay = 0, damping = 12) =>
   spring({ frame: frame - delay, fps, config: { damping, stiffness: 140 } });
 
 // ---------- Scene 1: hook ----------
-export const HookScene: React.FC = () => {
+export const HookScene: React.FC<LangProps> = ({ lang = "it" }) => {
+  const tx = TEXT[lang];
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const lines = ["La maggior parte", "dei principianti", "perde soldi."];
+  const lines = tx.hook;
   const second = interpolate(f, [48, 58], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill style={{ background: "#05070F", justifyContent: "center", padding: "0 90px" }}>
@@ -45,10 +74,10 @@ export const HookScene: React.FC = () => {
         }}
       >
         <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 112, lineHeight: 1.05, letterSpacing: -3, color: C.white }}>
-          E se potessi
+          {tx.what}
         </div>
         <GemText size={112} style={{ letterSpacing: -3, lineHeight: 1.1, display: "block" }}>
-          allenarti prima?
+          {tx.train}
         </GemText>
       </div>
     </AbsoluteFill>
@@ -56,7 +85,8 @@ export const HookScene: React.FC = () => {
 };
 
 // ---------- Scene 2: logo reveal ----------
-export const LogoScene: React.FC = () => {
+export const LogoScene: React.FC<LangProps> = ({ lang = "it" }) => {
+  const tx = TEXT[lang];
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const s = pop(f, fps, 0, 9);
@@ -106,7 +136,7 @@ export const LogoScene: React.FC = () => {
           opacity: interpolate(f, [34, 48], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
         }}
       >
-        Mercati veri. Soldi finti.
+        {tx.tagline}
       </div>
     </AbsoluteFill>
   );
@@ -182,7 +212,8 @@ export const FeatureScene: React.FC<FeatureProps> = ({ kicker, title, highlight,
 };
 
 // ---------- Scene 6: offer + CTA ----------
-export const OfferScene: React.FC = () => {
+export const OfferScene: React.FC<LangProps> = ({ lang = "it" }) => {
+  const tx = TEXT[lang];
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const a = pop(f, fps, 0, 10);
@@ -197,16 +228,16 @@ export const OfferScene: React.FC = () => {
         <SonarMark size={220} spin={f * 2} />
       </div>
       <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 44, letterSpacing: 6, color: C.dim, marginTop: 70, opacity: a }}>
-        REGALO DI BENVENUTO
+        {tx.gift}
       </div>
       <GemText size={210} style={{ letterSpacing: -6, marginTop: 10, transform: `scale(${a})`, display: "block" }}>
-        {count >= 1000 ? `${Math.floor(count / 1000)}.${String(count % 1000).padStart(3, "0")}` : count}
+        {count >= 1000 ? `${Math.floor(count / 1000)}${tx.sep}${String(count % 1000).padStart(3, "0")}` : count}
       </GemText>
       <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 64, color: C.white, opacity: b, transform: `translateY(${(1 - b) * 30}px)` }}>
         SONAR COIN
       </div>
       <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 48, color: C.dim, marginTop: 18, opacity: b }}>
-        + 5 giorni gratis
+        {tx.trial}
       </div>
       <div
         style={{
@@ -222,7 +253,7 @@ export const OfferScene: React.FC = () => {
           transform: `scale(${c * pulse})`,
         }}
       >
-        Scarica SONAR
+        {tx.cta}
       </div>
       <div
         style={{
@@ -238,7 +269,7 @@ export const OfferScene: React.FC = () => {
           color: "rgba(220,232,255,0.55)",
         }}
       >
-        Simulazione educativa con valuta virtuale. Non è un consiglio di investimento.
+        {tx.legal}
       </div>
     </AbsoluteFill>
   );

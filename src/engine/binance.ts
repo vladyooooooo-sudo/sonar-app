@@ -37,7 +37,7 @@ export function isTradableUsdt(symbol: string) {
   const base = symbol.slice(0, -4);
   if (!base || STABLES.has(base)) return false;
   if (/(UP|DOWN|BULL|BEAR)$/.test(base) && base.length > 4) return false;
-  // tokenized / leveraged stock products (e.g. SOXLB): 4+ letters ending in "B", not a known coin
+  // tokenized / leveraged stock products (e.g. SOXLB): 5+ letters ending in "B", not a known coin
   if (base.length >= 5 && base.endsWith('B') && !KNOWN_B.has(base)) return false;
   return true;
 }
