@@ -15,7 +15,7 @@ import { PATTERNS, scanSignals } from '@/data/signals';
 import { formatPct, formatPrice, formatSC } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { useApp } from '@/store/app-store';
-import { useMarket } from '@/store/market';
+import { CHART_LEN, useMarket, useMarketMeta } from '@/store/market';
 import { font, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
@@ -27,6 +27,7 @@ export default function AssetDetail() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const market = useMarket();
+  const { stats } = useMarketMeta();
   const { balance, dispatch } = useApp();
   const q = market[symbol ?? ''];
   const [amount, setAmount] = useState(100);
@@ -41,8 +42,10 @@ export default function AssetDetail() {
   }
 
   const up = q.change >= 0;
-  const sig = scanSignals([q])[0];
-  const pat = PATTERNS[sig.pattern];
+  const sig = scanSignals([q])[0] ?? null;
+  const pat = sig ? PATTERNS[sig.pattern] : null;
+  const st = sig ? stats[sig.pattern] : null;
+  const live = !q.asset.simulated;
   const costs = COSTS[q.asset.kind];
   const fee = amount * costs.fee;
   const spread = amount * costs.spread / 2;
@@ -72,7 +75,12 @@ export default function AssetDetail() {
               {q.asset.symbol} · {q.asset.kind === 'crypto' ? 'Crypto' : 'Azione'}
             </Txt>
           </View>
-          <Pill label="LIVE" color={t.up} bg={t.upSoft} icon={<View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: t.up }} />} />
+          <Pill
+            label={live ? 'LIVE' : 'DEMO'}
+            color={live ? t.up : '#F5A524'}
+            bg={live ? t.upSoft : 'rgba(245,165,36,0.14)'}
+            icon={<View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: live ? t.up : '#F5A524' }} />}
+          />
         </View>
 
         <View style={{ paddingHorizontal: space.lg, marginTop: space.xl }}>
@@ -83,7 +91,7 @@ export default function AssetDetail() {
         </View>
 
         <View style={{ marginTop: space.lg }}>
-          <Sparkline values={q.history} width={width} height={200} color={up ? t.up : t.down} dot strokeWidth={2.5} />
+          <Sparkline values={q.history.slice(-CHART_LEN)} width={width} height={200} color={up ? t.up : t.down} dot strokeWidth={2.5} />
         </View>
 
         <View style={{ paddingHorizontal: space.lg, gap: space.md, marginTop: space.lg }}>
@@ -92,14 +100,28 @@ export default function AssetDetail() {
               <Icon name="radar" size={18} color={t.accent} />
               <Txt variant="label">Cosa vede il radar</Txt>
             </View>
-            <Txt variant="h3" style={{ marginTop: 8 }}>
-              {pat.label}
-            </Txt>
-            <Txt variant="small" style={{ marginTop: 6, lineHeight: 19 }}>
-              In passato, dopo questo schema, il prezzo si è mosso {pat.bias === 'up' ? 'al rialzo' : 'al ribasso'} nel{' '}
-              <Text style={{ fontFamily: font.bodyBold, color: t.text }}>{pat.winRate}%</Text> dei casi entro {pat.horizon} — e nel{' '}
-              {100 - pat.winRate}% dei casi no. Forza segnale: {sig.score}/100.
-            </Txt>
+            {pat && sig && st ? (
+              <>
+                <Txt variant="h3" style={{ marginTop: 8 }}>
+                  {pat.label}
+                </Txt>
+                <Txt variant="small" style={{ marginTop: 6, lineHeight: 19 }}>
+                  In passato, dopo questo schema, il prezzo si è mosso {pat.bias === 'up' ? 'al rialzo' : 'al ribasso'} nel{' '}
+                  <Text style={{ fontFamily: font.bodyBold, color: t.text }}>{st.winRate}%</Text> dei casi entro {pat.horizon} — e nel{' '}
+                  {100 - st.winRate}% dei casi no ({st.samples.toLocaleString('it-IT')} casi{st.measured ? ' misurati sui dati reali' : ' di esempio'}).
+                  Forza segnale: {sig.score}/100.
+                </Txt>
+              </>
+            ) : (
+              <>
+                <Txt variant="h3" style={{ marginTop: 8 }}>
+                  Nessuno schema rilevante
+                </Txt>
+                <Txt variant="small" style={{ marginTop: 6, lineHeight: 19 }}>
+                  In questo momento il grafico non mostra rotture, volumi anomali o RSI estremi. Puoi comunque provare in demo.
+                </Txt>
+              </>
+            )}
           </Card>
 
           <Card>

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useReducer, type ReactNode } from 'react';
 
-import { ASSET_MAP, COSTS } from '@/data/assets';
+import { COSTS, kindOf } from '@/data/assets';
 import { REFERRAL_REWARD, TRIAL_DAYS, WELCOME_COINS, type PlanId } from '@/data/plans';
 import type { ThemeName } from '@/theme/tokens';
 
@@ -71,7 +71,7 @@ const initialState: State = {
 };
 
 export function sellValue(p: Position, price: number) {
-  const c = COSTS[ASSET_MAP[p.symbol].kind];
+  const c = COSTS[kindOf(p.symbol)];
   return p.units * price * (1 - c.spread / 2) * (1 - c.fee);
 }
 
@@ -91,7 +91,7 @@ function reducer(s: State, a: Action): State {
       return { ...s, plan: a.plan, trialEndsAt: null, balance: s.balance + a.coins };
     case 'buy': {
       if (a.amount <= 0 || a.amount > s.balance) return s;
-      const c = COSTS[ASSET_MAP[a.symbol].kind];
+      const c = COSTS[kindOf(a.symbol)];
       const fill = a.price * (1 + c.spread / 2);
       const units = (a.amount * (1 - c.fee)) / fill;
       const pos: Position = { id: uid(), symbol: a.symbol, units, invested: a.amount, openPrice: fill, openedAt: Date.now() };

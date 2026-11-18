@@ -10,7 +10,7 @@ import { Screen } from '@/components/screen';
 import { Bouncy, Disclaimer, HeroCard, Pill, SectionTitle, Txt } from '@/components/ui';
 import { PATTERNS, scanSignals, type Signal } from '@/data/signals';
 import { formatPrice } from '@/lib/format';
-import { useMarket } from '@/store/market';
+import { useMarket, useMarketMeta } from '@/store/market';
 import { font, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
@@ -40,7 +40,10 @@ function ScoreRing({ score, color, track }: { score: number; color: string; trac
 function SignalCard({ s, index }: { s: Signal; index: number }) {
   const t = useTheme();
   const q = useMarket()[s.symbol];
+  const { stats } = useMarketMeta();
   const p = PATTERNS[s.pattern];
+  const st = stats[s.pattern];
+  if (!q) return null;
   const up = p.bias === 'up';
   return (
     <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(18)} layout={LinearTransition.springify()}>
@@ -74,7 +77,10 @@ function SignalCard({ s, index }: { s: Signal; index: number }) {
             <ScoreRing score={s.score} color={t.accent} track={t.surfaceAlt} />
           </View>
           <View style={{ flexDirection: 'row', marginTop: space.md, paddingTop: space.md, borderTopWidth: 1, borderTopColor: t.border }}>
-            <Stat label="Storico" value={`${p.winRate}%`} hint={`su ${p.samples.toLocaleString('it-IT')} casi`} />
+            <Stat
+              label="Storico"
+              color={st.winRate >= 55 ? t.up : st.winRate < 45 ? t.down : undefined}
+              value={`${st.winRate}%`} hint={`${st.samples.toLocaleString('it-IT')} casi${st.measured ? ' reali' : ' · esempio'}`} />
             <Stat label="Orizzonte" value={p.horizon} />
             <Stat label="Volume" value={`${s.volumeBoost.toFixed(1)}x`} />
             <Stat label="RSI" value={s.rsi.toFixed(0)} />
@@ -85,14 +91,14 @@ function SignalCard({ s, index }: { s: Signal; index: number }) {
   );
 }
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Stat({ label, value, hint, color }: { label: string; value: string; hint?: string; color?: string }) {
   const t = useTheme();
   return (
     <View style={{ flex: 1 }}>
       <Txt variant="label" style={{ fontSize: 10 }}>
         {label}
       </Txt>
-      <Txt variant="num" style={{ marginTop: 2 }}>
+      <Txt variant="num" color={color} style={{ marginTop: 2 }}>
         {value}
       </Txt>
       {hint && <Text style={{ fontFamily: font.body, fontSize: 10, color: t.textFaint }}>{hint}</Text>}
@@ -103,18 +109,21 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 export default function Radar() {
   const t = useTheme();
   const market = useMarket();
+  const meta = useMarketMeta();
   const { width } = useWindowDimensions();
   // Re-rank every 6s so the list doesn't jump on each price tick.
-  const [snapshot, setSnapshot] = useState(() => scanSignals(Object.values(market)));
+  // With live data, the radar only ranks live instruments (simulated stocks are excluded).
+  const universe = () => Object.values(market).filter((q) => meta.source !== 'live' || !q.asset.simulated);
+  const [snapshot, setSnapshot] = useState(() => scanSignals(universe()));
   const [scans, setScans] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setScans((n) => n + 1), 6000);
     return () => clearInterval(id);
   }, []);
   useEffect(() => {
-    if (scans) setSnapshot(scanSignals(Object.values(market)));
+    setSnapshot(scanSignals(universe()));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scans]);
+  }, [scans, meta.source]);
 
   const blips = useMemo(
     () =>
@@ -138,7 +147,7 @@ export default function Radar() {
         <View style={{ flexDirection: 'row', alignSelf: 'stretch', justifyContent: 'space-between', marginBottom: space.lg }}>
           <View>
             <Text style={{ fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 1.4, color: t.heroDim }}>TITOLI ANALIZZATI</Text>
-            <Text style={{ fontFamily: font.displayHeavy, fontSize: 26, color: t.heroText }}>{Object.keys(market).length}</Text>
+            <Text style={{ fontFamily: font.displayHeavy, fontSize: 26, color: t.heroText }}>{meta.scanned || Object.keys(market).length}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 1.4, color: t.heroDim }}>SEGNALI FORTI</Text>
@@ -154,9 +163,13 @@ export default function Radar() {
           onBlipPress={(id) => router.push(`/asset/${id}`)}
         />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.lg }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.up }} />
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: meta.source === 'live' ? t.up : '#F5A524' }} />
           <Text style={{ fontFamily: font.bodySemi, fontSize: 12, color: t.heroDim }}>
-            Live · nuova scansione ogni 6s · #{scans + 1}
+            {meta.source === 'live'
+              ? `Live Binance · nuova scansione ogni 6s · #${scans + 1}`
+              : meta.source === 'loading'
+                ? 'Collegamento ai mercati…'
+                : 'DEMO · prezzi simulati (mercati non raggiungibili)'}
           </Text>
         </View>
       </HeroCard>
