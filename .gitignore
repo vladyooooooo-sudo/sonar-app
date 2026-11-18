@@ -45,3 +45,6 @@ example
 # promo video
 promo/node_modules/
 promo/out/
+
+# export bundle
+export/
