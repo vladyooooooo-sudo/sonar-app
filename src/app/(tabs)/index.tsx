@@ -7,9 +7,11 @@ import { AssetBadge, AssetRow } from '@/components/asset-row';
 import { RollingNumber, Sparkline } from '@/components/charts';
 import { CoinGlyph } from '@/components/coin';
 import { Icon, type IconName } from '@/components/icon';
+import { RankBadge } from '@/components/rank-badge';
 import { Screen } from '@/components/screen';
 import { SonarMark } from '@/components/sonar-logo';
 import { Bouncy, Card, Disclaimer, HeroCard, Pill, SectionTitle, Txt } from '@/components/ui';
+import { nextTier, tierOf, tierProgress } from '@/data/ranks';
 import { formatPct, formatSC } from '@/lib/format';
 import { sellValue, useApp } from '@/store/app-store';
 import { useMarket } from '@/store/market';
@@ -70,7 +72,9 @@ function Segmented({ value, onChange, options }: { value: string; onChange: (v: 
 export default function Home() {
   const t = useTheme();
   const market = useMarket();
-  const { balance, positions, plan, trialEndsAt, dispatch } = useApp();
+  const { balance, positions, plan, trialEndsAt, dispatch, rating } = useApp();
+  const tier = tierOf(rating);
+  const next = nextTier(rating);
   const [filter, setFilter] = useState('Crypto');
 
   const positionsValue = positions.reduce((s, p) => s + sellValue(p, market[p.symbol].price), 0);
@@ -128,9 +132,33 @@ export default function Home() {
       <View style={{ flexDirection: 'row', marginTop: space.xl }}>
         <QuickAction icon="radar" label="Radar" onPress={() => router.push('/radar')} delay={80} />
         <QuickAction icon="learn" label="Impara" onPress={() => router.push('/impara')} delay={140} />
-        <QuickAction icon="gift" label="Invita" onPress={() => router.push('/invita')} delay={200} />
-        <QuickAction icon="wallet" label="Ricarica" onPress={() => router.push('/shop')} delay={260} />
+        <QuickAction icon="trophy" label="Ranked" onPress={() => router.push('/ranked')} delay={200} />
+        <QuickAction icon="gift" label="Invita" onPress={() => router.push('/invita')} delay={260} />
       </View>
+
+      <Bouncy onPress={() => router.push('/ranked')} scaleTo={0.97} style={{ marginTop: space.xl }}>
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+          <RankBadge tier={tier} size={58} />
+          <View style={{ flex: 1 }}>
+            <Txt variant="label">Il tuo grado</Txt>
+            <Txt variant="h3" style={{ marginTop: 2 }}>
+              {tier.name} · {rating} SR
+            </Txt>
+            <Txt variant="small" style={{ marginTop: 2 }}>
+              {tier.title}
+            </Txt>
+            <View style={{ height: 6, borderRadius: 3, backgroundColor: t.surfaceAlt, marginTop: 8, overflow: 'hidden' }}>
+              <View style={{ width: `${Math.max(4, tierProgress(rating) * 100)}%`, height: '100%', backgroundColor: tier.colors[1] }} />
+            </View>
+            {next && (
+              <Txt variant="small" style={{ fontSize: 11, marginTop: 4 }}>
+                {next.min - rating} SR per {next.name}
+              </Txt>
+            )}
+          </View>
+          <Icon name="chevron" size={18} color={t.textFaint} />
+        </Card>
+      </Bouncy>
 
       <SectionTitle title="Le tue posizioni" action={<Txt variant="small">{positions.length} aperte</Txt>} />
       {positions.length === 0 ? (

@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { RankUpOverlay } from '@/components/rank-up';
 import { AppProvider, useApp } from '@/store/app-store';
 import { MarketProvider } from '@/store/market';
 import { useTheme } from '@/theme/use-theme';
@@ -27,8 +28,10 @@ function RootStack() {
           <Stack.Screen name="asset/[symbol]" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="plans" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="ranked" options={{ animation: 'slide_from_right' }} />
         </Stack.Protected>
       </Stack>
+      <RankUpOverlay />
     </>
   );
 }

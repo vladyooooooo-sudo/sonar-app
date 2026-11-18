@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useReducer, type React
 
 import { COSTS, kindOf } from '@/data/assets';
 import { REFERRAL_REWARD, TRIAL_DAYS, WELCOME_COINS, type PlanId } from '@/data/plans';
+import { srDelta, START_SR, tierOf, type TierId } from '@/data/ranks';
 import type { ThemeName } from '@/theme/tokens';
 
 /**
@@ -24,6 +25,8 @@ export type Trade = {
   side: 'buy' | 'sell';
   amount: number; // SC moved
   pnl?: number;
+  pnlPct?: number;
+  srChange?: number;
   at: number;
 };
 
@@ -40,6 +43,12 @@ type State = {
   referrals: number;
   referralCode: string;
   ownedSkins: string[];
+  /** Ranked rating (SR). */
+  rating: number;
+  bestRating: number;
+  closedTrades: number;
+  wins: number;
+  rankUp: { from: TierId; to: TierId; at: number } | null;
 };
 
 type Action =
@@ -51,7 +60,8 @@ type Action =
   | { type: 'addCoins'; coins: number }
   | { type: 'completeLesson'; id: string; xp: number; coins: number }
   | { type: 'fakeReferral' }
-  | { type: 'buySkin'; id: string; price: number };
+  | { type: 'buySkin'; id: string; price: number }
+  | { type: 'clearRankUp' };
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -68,6 +78,11 @@ const initialState: State = {
   referrals: 0,
   referralCode: `SONAR-${uid().slice(0, 5).toUpperCase()}`,
   ownedSkins: [],
+  rating: START_SR,
+  bestRating: START_SR,
+  closedTrades: 0,
+  wins: 0,
+  rankUp: null,
 };
 
 export function sellValue(p: Position, price: number) {
@@ -106,14 +121,24 @@ function reducer(s: State, a: Action): State {
       const p = s.positions.find((x) => x.id === a.id);
       if (!p) return s;
       const value = sellValue(p, a.price);
+      const pnlPct = ((value - p.invested) / p.invested) * 100;
+      const d = srDelta(pnlPct, p.invested);
+      const rating = Math.max(0, s.rating + d);
+      const before = tierOf(s.rating);
+      const after = tierOf(rating);
       return {
         ...s,
         balance: s.balance + value,
         positions: s.positions.filter((x) => x.id !== a.id),
         trades: [
-          { id: uid(), symbol: p.symbol, side: 'sell', amount: value, pnl: value - p.invested, at: Date.now() },
+          { id: uid(), symbol: p.symbol, side: 'sell', amount: value, pnl: value - p.invested, pnlPct, srChange: d, at: Date.now() },
           ...s.trades,
         ],
+        rating,
+        bestRating: Math.max(s.bestRating, rating),
+        closedTrades: s.closedTrades + (d !== 0 || p.invested >= 50 ? 1 : 0),
+        wins: s.wins + (pnlPct > 0 && p.invested >= 50 ? 1 : 0),
+        rankUp: after.min > before.min ? { from: before.id, to: after.id, at: Date.now() } : s.rankUp,
       };
     }
     case 'addCoins':
@@ -123,6 +148,8 @@ function reducer(s: State, a: Action): State {
       return { ...s, completedLessons: [...s.completedLessons, a.id], xp: s.xp + a.xp, balance: s.balance + a.coins };
     case 'fakeReferral':
       return { ...s, referrals: s.referrals + 1, balance: s.balance + REFERRAL_REWARD };
+    case 'clearRankUp':
+      return { ...s, rankUp: null };
     case 'buySkin':
       if (s.balance < a.price || s.ownedSkins.includes(a.id)) return s;
       return { ...s, balance: s.balance - a.price, ownedSkins: [...s.ownedSkins, a.id] };
