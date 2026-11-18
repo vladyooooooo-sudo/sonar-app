@@ -1,7 +1,8 @@
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { slide } from "@remotion/transitions/slide";
-import { Composition, Folder } from "remotion";
+import { Audio } from "@remotion/media";
+import { Composition, Folder, staticFile } from "remotion";
 
 import { RANKED_DURATION, RankedAd } from "./ranked-ad";
 import { FeatureScene, HookScene, LogoScene, OfferScene, type FeatureProps, type Lang } from "./scenes";
@@ -23,6 +24,8 @@ const FEATURES: Record<Lang, FeatureProps[]> = {
 const features = FEATURES.it;
 
 export const SonarPromo: React.FC<{ lang?: Lang }> = ({ lang = "it" }) => (
+  <>
+  <Audio src={staticFile("music/promo.wav")} />
   <TransitionSeries>
     <TransitionSeries.Sequence name="Hook" durationInFrames={95}>
       <HookScene lang={lang} />
@@ -46,6 +49,7 @@ export const SonarPromo: React.FC<{ lang?: Lang }> = ({ lang = "it" }) => (
       <OfferScene lang={lang} />
     </TransitionSeries.Sequence>
   </TransitionSeries>
+  </>
 );
 
 const TOTAL = 95 + 80 + 3 * 100 + 120 - 5 * T;
@@ -67,7 +71,8 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="Offer" component={OfferScene} width={1080} height={1920} fps={30} durationInFrames={120} />
     </Folder>
     <Composition id="SonarPromo" component={SonarPromo} width={1080} height={1920} fps={30} durationInFrames={TOTAL} defaultProps={{ lang: "it" as Lang }} />
-    <Composition id="RankedAd" component={RankedAd} width={1080} height={1920} fps={30} durationInFrames={RANKED_DURATION} />
+    <Composition id="RankedAd" component={RankedAd} width={1080} height={1920} fps={30} durationInFrames={RANKED_DURATION} defaultProps={{ lang: "it" as const }} />
+    <Composition id="RankedAdEN" component={RankedAd} width={1080} height={1920} fps={30} durationInFrames={RANKED_DURATION} defaultProps={{ lang: "en" as const }} />
     <Composition id="SonarPromoEN" component={SonarPromo} width={1080} height={1920} fps={30} durationInFrames={TOTAL} defaultProps={{ lang: "en" as Lang }} />
   </>
 );

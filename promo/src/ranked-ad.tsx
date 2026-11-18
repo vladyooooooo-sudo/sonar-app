@@ -1,6 +1,7 @@
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { wipe } from "@remotion/transitions/wipe";
+import { Audio } from "@remotion/media";
 import { AbsoluteFill, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig, Easing } from "remotion";
 
 import { Backdrop, C, FONT_BODY, FONT_DISPLAY, GemText, SonarMark, gemGradient } from "./brand";
@@ -15,6 +16,61 @@ const TIERS: Tier[] = [
   { id: "diamante", name: "Diamante", title: "Investitore avanzato", min: 1700, colors: ["#FFFFFF", "#9FD4FF", "#7A6CFF"], glow: "rgba(159,212,255,0.7)" },
   { id: "leggenda", name: "Leggenda", title: "Maestro dei mercati", min: 2000, colors: ["#FFE6F6", "#FF6FB5", "#7A1FD1"], glow: "rgba(255,111,181,0.65)" },
 ];
+
+export type Lang = "it" | "en";
+type P = { lang?: Lang };
+
+const EN_TIERS: Record<string, [string, string]> = {
+  bronzo: ["Bronze", "Rookie investor"],
+  argento: ["Silver", "Novice investor"],
+  oro: ["Gold", "Intermediate investor"],
+  platino: ["Platinum", "Expert investor"],
+  diamante: ["Diamond", "Advanced investor"],
+  leggenda: ["Legend", "Market master"],
+};
+const tName = (t: Tier, lang: Lang) => (lang === "en" ? EN_TIERS[t.id][0] : t.name);
+const tTitle = (t: Tier, lang: Lang) => (lang === "en" ? EN_TIERS[t.id][1] : t.title);
+
+const TX = {
+  it: {
+    hook: ["Quanto", "sei", "bravo", "davvero", "a investire?"],
+    promoted: "PROMOSSO",
+    how: "COME FUNZIONA",
+    start1: "Tutti partono",
+    start2: "da Bronzo.",
+    points: [
+      { k: "01", t: "Investi con prezzi reali", s: "e SONAR COIN finti" },
+      { k: "02", t: "Ogni operazione chiusa", s: "muove il tuo SR" },
+      { k: "03", t: "Conta la percentuale,", s: "non quanti soldi hai" },
+    ],
+    ch1: "Sfida",
+    ch2: "i tuoi amici.",
+    you: "Tu",
+    find1: "Scopri",
+    find2: "il tuo grado.",
+    cta: "Scarica SONAR",
+    legal: "Grado calcolato su operazioni simulate con valuta virtuale. Non garantisce risultati con denaro reale.",
+  },
+  en: {
+    hook: ["How", "good", "are", "you", "really", "at investing?"],
+    promoted: "PROMOTED",
+    how: "HOW IT WORKS",
+    start1: "Everyone starts",
+    start2: "at Bronze.",
+    points: [
+      { k: "01", t: "Invest with real prices", s: "and fake SONAR COIN" },
+      { k: "02", t: "Every closed trade", s: "moves your SR" },
+      { k: "03", t: "Percent return counts,", s: "not how much you hold" },
+    ],
+    ch1: "Challenge",
+    ch2: "your friends.",
+    you: "You",
+    find1: "Discover",
+    find2: "your rank.",
+    cta: "Get SONAR",
+    legal: "Rank based on simulated trades with virtual currency. It does not guarantee real-money results.",
+  },
+};
 
 const ease = (f: number, a: number, b: number, from = 0, to = 1) =>
   interpolate(f, [a, b], [from, to], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) });
@@ -61,10 +117,10 @@ const Dark: React.FC<{ children: React.ReactNode; tint?: string }> = ({ children
 );
 
 // ---------- 1. Hook ----------
-const HookScene: React.FC = () => {
+const HookScene: React.FC<P> = ({ lang = "it" }) => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const words = ["Quanto", "sei", "bravo", "davvero", "a investire?"];
+  const words = TX[lang].hook;
   const flash = interpolate(f, [58, 62, 70], [0, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <Dark>
@@ -72,10 +128,10 @@ const HookScene: React.FC = () => {
         <div style={{ display: "flex", flexWrap: "wrap", columnGap: 30 }}>
           {words.map((w, i) => {
             const p = spring({ frame: f - i * 6, fps, config: { damping: 11 } });
-            const last = i >= 3;
+            const last = i >= words.length - 2;
             return (
               <span
-                key={w}
+                key={w + i}
                 style={{
                   fontFamily: FONT_DISPLAY,
                   fontWeight: 800,
@@ -103,7 +159,7 @@ const HookScene: React.FC = () => {
 
 // ---------- 2. Climb through the tiers ----------
 const CLIMB = 150;
-const ClimbScene: React.FC = () => {
+const ClimbScene: React.FC<P> = ({ lang = "it" }) => {
   const f = useCurrentFrame();
   const per = CLIMB / TIERS.length;
   const idx = Math.min(TIERS.length - 1, Math.floor(f / per));
@@ -141,9 +197,9 @@ const ClimbScene: React.FC = () => {
           <Badge tier={tier} size={460} />
         </div>
         <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 104, color: "#fff", letterSpacing: -2, marginTop: 10, opacity: Math.min(1, local * 4) }}>
-          {tier.name}
+          {tName(tier, lang)}
         </div>
-        <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 44, color: tier.colors[0], opacity: Math.min(1, local * 4) }}>{tier.title}</div>
+        <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 44, color: tier.colors[0], opacity: Math.min(1, local * 4) }}>{tTitle(tier, lang)}</div>
       </div>
       <div style={{ position: "absolute", top: 170, left: 0, right: 0, textAlign: "center" }}>
         <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 40, letterSpacing: 8, color: "rgba(220,232,255,0.6)" }}>SONAR RATING</div>
@@ -156,7 +212,7 @@ const ClimbScene: React.FC = () => {
 };
 
 // ---------- 3. Promotion burst ----------
-const PromoScene: React.FC = () => {
+const PromoScene: React.FC<P> = ({ lang = "it" }) => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const tier = TIERS[4];
@@ -202,14 +258,14 @@ const PromoScene: React.FC = () => {
         );
       })}
       <AbsoluteFill style={{ alignItems: "center", paddingTop: 300 }}>
-        <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 52, letterSpacing: 14, color: tier.colors[1], opacity: ease(f, 6, 16) }}>PROMOSSO</div>
+        <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 52, letterSpacing: 14, color: tier.colors[1], opacity: ease(f, 6, 16) }}>{TX[lang].promoted}</div>
         <div style={{ marginTop: 40, transform: `scale(${p})`, filter: `drop-shadow(0 0 90px ${tier.glow})` }}>
           <Badge tier={tier} size={560} />
         </div>
         <GemText size={150} style={{ letterSpacing: -4, marginTop: 30, opacity: ease(f, 10, 22), display: "block" }}>
-          DIAMANTE
+          {tName(tier, lang).toUpperCase()}
         </GemText>
-        <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 48, color: "rgba(220,232,255,0.8)", opacity: ease(f, 16, 28) }}>Investitore avanzato</div>
+        <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 48, color: "rgba(220,232,255,0.8)", opacity: ease(f, 16, 28) }}>{tTitle(tier, lang)}</div>
       </AbsoluteFill>
       <AbsoluteFill style={{ background: "#fff", opacity: flash }} />
     </Dark>
@@ -217,27 +273,23 @@ const PromoScene: React.FC = () => {
 };
 
 // ---------- 4. How it works ----------
-const HowScene: React.FC = () => {
+const HowScene: React.FC<P> = ({ lang = "it" }) => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const phone = spring({ frame: f, fps, config: { damping: 14 } });
-  const points = [
-    { k: "01", t: "Investi con prezzi reali", s: "e SONAR COIN finti" },
-    { k: "02", t: "Ogni operazione chiusa", s: "muove il tuo SR" },
-    { k: "03", t: "Conta la percentuale,", s: "non quanti soldi hai" },
-  ];
+  const points = TX[lang].points;
   const W = 470;
   const H = Math.round((W * 1688) / 780);
   return (
     <AbsoluteFill>
       <Backdrop />
       <div style={{ position: "absolute", top: 150, left: 80, right: 80 }}>
-        <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 40, letterSpacing: 6, color: C.ice, opacity: ease(f, 0, 10) }}>COME FUNZIONA</div>
+        <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 40, letterSpacing: 6, color: C.ice, opacity: ease(f, 0, 10) }}>{TX[lang].how}</div>
         <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 96, lineHeight: 1.04, letterSpacing: -3, color: "#fff", marginTop: 10, opacity: ease(f, 2, 14) }}>
-          Tutti partono
+          {TX[lang].start1}
         </div>
         <GemText size={96} style={{ letterSpacing: -3, display: "block", opacity: ease(f, 6, 18) }}>
-          da Bronzo.
+          {TX[lang].start2}
         </GemText>
       </div>
       <div
@@ -283,12 +335,12 @@ const HowScene: React.FC = () => {
 };
 
 // ---------- 5. Leaderboard ----------
-const BoardScene: React.FC = () => {
+const BoardScene: React.FC<P> = ({ lang = "it" }) => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const rows = [
     { n: "Giulia_R", sr: 2140 },
-    { n: "Tu", sr: 1985 },
+    { n: TX[lang].you, sr: 1985 },
     { n: "Ale99", sr: 1810 },
     { n: "SaraInvest", sr: 1620 },
     { n: "Fede_btc", sr: 1475 },
@@ -297,15 +349,15 @@ const BoardScene: React.FC = () => {
   return (
     <Dark tint="rgba(255,111,181,0.22)">
       <div style={{ position: "absolute", top: 190, left: 90, right: 90 }}>
-        <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 112, lineHeight: 1.02, letterSpacing: -4, color: "#fff" }}>Sfida</div>
+        <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 112, lineHeight: 1.02, letterSpacing: -4, color: "#fff" }}>{TX[lang].ch1}</div>
         <GemText size={112} style={{ letterSpacing: -4, display: "block" }}>
-          i tuoi amici.
+          {TX[lang].ch2}
         </GemText>
       </div>
       <div style={{ position: "absolute", top: 640, left: 70, right: 70, display: "flex", flexDirection: "column", gap: 22 }}>
         {rows.map((r, i) => {
           const s = spring({ frame: f - 6 - i * 6, fps, config: { damping: 13 } });
-          const me = r.n === "Tu";
+          const me = r.n === TX[lang].you;
           const t = tierFor(r.sr);
           return (
             <div
@@ -327,7 +379,7 @@ const BoardScene: React.FC = () => {
               <Badge tier={t} size={110} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 54, color: "#fff" }}>{r.n}</div>
-                <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 34, color: t.colors[1] }}>{t.name}</div>
+                <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 34, color: t.colors[1] }}>{tName(t, lang)}</div>
               </div>
               <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 56, color: "#fff" }}>{r.sr}</div>
             </div>
@@ -339,7 +391,7 @@ const BoardScene: React.FC = () => {
 };
 
 // ---------- 6. CTA ----------
-const CtaScene: React.FC = () => {
+const CtaScene: React.FC<P> = ({ lang = "it" }) => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const a = spring({ frame: f, fps, config: { damping: 10 } });
@@ -358,10 +410,10 @@ const CtaScene: React.FC = () => {
         })}
       </div>
       <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 116, color: "#fff", letterSpacing: -4, marginTop: 90, opacity: a, transform: `scale(${0.9 + a * 0.1})` }}>
-        Scopri
+        {TX[lang].find1}
       </div>
       <GemText size={116} style={{ letterSpacing: -4, display: "inline-block", opacity: a, transform: `scale(${0.9 + a * 0.1})` }}>
-        il tuo grado.
+        {TX[lang].find2}
       </GemText>
       <div style={{ marginTop: 100, transform: `scale(${a})` }}>
         <SonarMark size={170} spin={f * 2} />
@@ -380,7 +432,7 @@ const CtaScene: React.FC = () => {
           transform: `scale(${c * (1 + Math.sin(f / 6) * 0.03)})`,
         }}
       >
-        Scarica SONAR
+        {TX[lang].cta}
       </div>
       <div
         style={{
@@ -396,7 +448,7 @@ const CtaScene: React.FC = () => {
           color: "rgba(220,232,255,0.55)",
         }}
       >
-        Grado calcolato su operazioni simulate con valuta virtuale. Non garantisce risultati con denaro reale.
+        {TX[lang].legal}
       </div>
     </AbsoluteFill>
   );
@@ -405,32 +457,35 @@ const CtaScene: React.FC = () => {
 const T = 10;
 export const RANKED_DURATION = 75 + CLIMB + 75 + 120 + 90 + 110 - 5 * T;
 
-export const RankedAd: React.FC = () => (
+export const RankedAd: React.FC<P> = ({ lang = "it" }) => (
+  <>
+  <Audio src={staticFile("music/ranked.wav")} />
   <TransitionSeries>
     <TransitionSeries.Sequence name="Hook" durationInFrames={75}>
-      <HookScene />
+      <HookScene lang={lang} />
     </TransitionSeries.Sequence>
     <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: T })} />
     <TransitionSeries.Sequence name="Climb" durationInFrames={CLIMB}>
-      <ClimbScene />
+      <ClimbScene lang={lang} />
     </TransitionSeries.Sequence>
     <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: T })} />
     <TransitionSeries.Sequence name="Promotion" durationInFrames={75}>
-      <PromoScene />
+      <PromoScene lang={lang} />
     </TransitionSeries.Sequence>
     <TransitionSeries.Transition presentation={wipe({ direction: "from-bottom" })} timing={linearTiming({ durationInFrames: T })} />
     <TransitionSeries.Sequence name="How" durationInFrames={120}>
-      <HowScene />
+      <HowScene lang={lang} />
     </TransitionSeries.Sequence>
     <TransitionSeries.Transition presentation={wipe({ direction: "from-right" })} timing={linearTiming({ durationInFrames: T })} />
     <TransitionSeries.Sequence name="Board" durationInFrames={90}>
-      <BoardScene />
+      <BoardScene lang={lang} />
     </TransitionSeries.Sequence>
     <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: T })} />
     <TransitionSeries.Sequence name="CTA" durationInFrames={110}>
-      <CtaScene />
+      <CtaScene lang={lang} />
     </TransitionSeries.Sequence>
   </TransitionSeries>
+  </>
 );
 
 export { HookScene as RankedHook, ClimbScene as RankedClimb, PromoScene as RankedPromo, HowScene as RankedHow, BoardScene as RankedBoard, CtaScene as RankedCta };
